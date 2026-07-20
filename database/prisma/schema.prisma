@@ -1,0 +1,61 @@
+// Atelier ERP — Prisma schema
+// STEP 1 SCOPE: minimal models to prove the DB/ORM/migration pipeline works
+// end-to-end across Docker, Postgres, Prisma, and the NestJS API.
+// STEP 2 will expand this file with Roles, Permissions, RefreshTokens,
+// and AuditLog as part of Identity & Security.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A tenant / company using the platform. Everything in the ERP
+/// is scoped to an Organization to keep the system multi-tenant.
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@map("organizations")
+}
+
+/// A person who can log in. A single User can belong to multiple
+/// Organizations through Membership (e.g. a consultant working
+/// with several client companies).
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@map("users")
+}
+
+/// Join table linking a User to an Organization. This is where
+/// role assignment will attach once Step 2 introduces Role/Permission.
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("memberships")
+}

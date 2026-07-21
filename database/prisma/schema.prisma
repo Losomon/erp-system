@@ -1,8 +1,7 @@
 // Atelier ERP — Prisma schema
-// STEP 1 SCOPE: minimal models to prove the DB/ORM/migration pipeline works
-// end-to-end across Docker, Postgres, Prisma, and the NestJS API.
-// STEP 2 will expand this file with Roles, Permissions, RefreshTokens,
-// and AuditLog as part of Identity & Security.
+// STEP 1: Organization, User, Membership — proved the DB/ORM pipeline.
+// STEP 2 (this revision): adds Role/Permission RBAC, RefreshToken for
+// session management, and AuditLog for tracking sensitive actions.
 
 generator client {
   provider = "prisma-client-js"
@@ -23,6 +22,8 @@ model Organization {
   updatedAt DateTime @updatedAt
 
   memberships Membership[]
+  roles       Role[]
+  auditLogs   AuditLog[]
 
   @@map("organizations")
 }
@@ -40,22 +41,112 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships Membership[]
+  memberships   Membership[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
 
   @@map("users")
 }
 
-/// Join table linking a User to an Organization. This is where
-/// role assignment will attach once Step 2 introduces Role/Permission.
+/// Join table linking a User to an Organization with a single Role.
+/// This is the seat that determines what the user can do inside
+/// that specific organization.
 model Membership {
   id             String   @id @default(cuid())
   userId         String
   organizationId String
+  roleId         String
   createdAt      DateTime @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   @@unique([userId, organizationId])
   @@map("memberships")
+}
+
+/// A role scoped to one Organization. Every organization gets its own
+/// copy of the default roles (Owner, Admin, Manager, Accountant,
+/// Sales Staff, Employee) when it's created, seeded with sensible
+/// default permissions. `isSystem` roles can't be deleted or renamed;
+/// organizations can still add their own custom roles later.
+model Role {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  isSystem       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships     Membership[]
+  rolePermissions RolePermission[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+/// The global catalog of permissions the system understands, e.g.
+/// "customers.read", "invoices.approve". Not organization-scoped —
+/// this is the fixed vocabulary every Role draws from.
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  description String
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+/// Join table attaching Permissions to a Role.
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// A long-lived refresh token issued at login, used to mint new
+/// access tokens without forcing the user to log in again. Stored
+/// as a hash, never the raw token. Revoked on logout.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+/// A record of a sensitive action taken in the system. organizationId
+/// and userId are nullable because a handful of actions (e.g. a failed
+/// login attempt before we know who it is) don't have both.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String
+  entityType     String?
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
 }

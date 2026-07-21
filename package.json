@@ -14,6 +14,7 @@
     "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
     "db:generate": "npm run db:generate --workspace=apps/api",
     "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "db:seed": "npm run db:seed --workspace=apps/api",
     "db:studio": "npm run db:studio --workspace=apps/api",
     "docker:up": "docker compose -f docker-compose.yml up -d",
     "docker:down": "docker compose -f docker-compose.yml down",
@@ -21,10 +22,6 @@
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\""
   },
   "devDependencies": {
-    "@nestjs/common": "^10.4.22",
-    "@nestjs/config": "^3.3.0",
-    "@nestjs/core": "^10.4.22",
-    "@nestjs/platform-express": "^10.4.22",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4"
   },

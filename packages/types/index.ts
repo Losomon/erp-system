@@ -24,3 +24,52 @@ export interface ApiHealthResponse {
   service: string;
   timestamp: string;
 }
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  createdAt: string;
+}
+
+export interface UserOrganizationSummary {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  roleName: string;
+}
+
+export interface CurrentUserResponse extends PublicUser {
+  organizations: UserOrganizationSummary[];
+}
+
+export interface AuthResponse {
+  user: PublicUser;
+  accessToken: string;
+}
+
+export interface OrganizationListItem {
+  organizationId: string;
+  name: string;
+  slug: string;
+  roleName: string;
+  joinedAt: string;
+}
+
+export interface OrganizationMember {
+  membershipId: string;
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roleName: string;
+  joinedAt: string;
+}
+
+export interface OrganizationRole {
+  id: string;
+  name: string;
+  isSystem: boolean;
+  permissions: string[];
+}

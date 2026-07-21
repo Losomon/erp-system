@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ApiHealthResponse } from "@atelier/types";
 
 async function getHealth() {
@@ -24,9 +25,8 @@ export default async function Home() {
           Foundation is running
         </h1>
         <p className="mt-3 max-w-md text-sm text-atelier-slate">
-          This placeholder confirms the web app can reach the API and the
-          API can reach the database. The real dashboard replaces this page
-          in Step 3.
+          Step 1 (infrastructure) and Step 2 (identity &amp; security) are in
+          place. The real ERP dashboard replaces this page in Step 3.
         </p>
       </div>
 
@@ -43,6 +43,21 @@ export default async function Home() {
           <span className="font-medium">Checked at:</span>{" "}
           {health ? new Date(health.timestamp).toLocaleString() : "—"}
         </p>
+      </div>
+
+      <div className="flex gap-3">
+        <Link
+          href="/register"
+          className="rounded-md bg-atelier-ink px-4 py-2 text-sm font-medium text-white hover:bg-atelier-slate"
+        >
+          Create account
+        </Link>
+        <Link
+          href="/login"
+          className="rounded-md border border-atelier-slate/25 px-4 py-2 text-sm font-medium text-atelier-ink hover:bg-atelier-slate/5"
+        >
+          Sign in
+        </Link>
       </div>
     </main>
   );

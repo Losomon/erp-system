@@ -10,6 +10,9 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_module_1 = require("./prisma/prisma.module");
+const audit_module_1 = require("./audit/audit.module");
+const auth_module_1 = require("./auth/auth.module");
+const organizations_module_1 = require("./organizations/organizations.module");
 const health_controller_1 = require("./health/health.controller");
 let AppModule = class AppModule {
 };
@@ -22,6 +25,9 @@ exports.AppModule = AppModule = __decorate([
                 envFilePath: ["../../.env", ".env"],
             }),
             prisma_module_1.PrismaModule,
+            audit_module_1.AuditModule,
+            auth_module_1.AuthModule,
+            organizations_module_1.OrganizationsModule,
         ],
         controllers: [health_controller_1.HealthController],
     })
